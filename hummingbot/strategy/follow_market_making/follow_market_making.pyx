@@ -24,13 +24,12 @@ from hummingbot.core.utils import map_df_to_str
 
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.strategy_base import StrategyBase
-from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.strategy.utils import order_age
 from .data_types import (
     Proposal,
     PriceSize
 )
-from .pure_market_making_order_tracker import PureMarketMakingOrderTracker
+from .follow_market_making_order_tracker import FollowMarketMakingOrderTracker
 
 from hummingbot.strategy.hanging_orders_tracker import (
     CreatedPairOfOrders,
@@ -100,7 +99,7 @@ cdef class FollowMarketMakingStrategy(StrategyBase):
                     ):
         if price_ceiling != s_decimal_neg_one and price_ceiling < price_floor:
             raise ValueError("Parameter price_ceiling cannot be lower than price_floor.")
-        self._sb_order_tracker = PureMarketMakingOrderTracker()
+        self._sb_order_tracker = FollowMarketMakingOrderTracker()
         self._market_info = market_info
         self._bid_spread = bid_spread
         self._ask_spread = ask_spread
@@ -511,7 +510,7 @@ cdef class FollowMarketMakingStrategy(StrategyBase):
         ])
         return inventory_skew_df
 
-    def pure_mm_assets_df(self, to_show_current_pct: bool) -> pd.DataFrame:
+    def follow_mm_assets_df(self, to_show_current_pct: bool) -> pd.DataFrame:
         market, trading_pair, base_asset, quote_asset = self._market_info
         price = self._market_info.get_mid_price()
         base_balance = float(market.get_balance(base_asset))
@@ -625,7 +624,7 @@ cdef class FollowMarketMakingStrategy(StrategyBase):
         markets_df = map_df_to_str(self.market_status_data_frame([self._market_info]))
         lines.extend(["", "  Markets:"] + ["    " + line for line in markets_df.to_string(index=False).split("\n")])
 
-        assets_df = map_df_to_str(self.pure_mm_assets_df(not self._inventory_skew_enabled))
+        assets_df = map_df_to_str(self.follow_mm_assets_df(not self._inventory_skew_enabled))
         # append inventory skew stats.
         if self._inventory_skew_enabled:
             inventory_skew_df = map_df_to_str(self.inventory_skew_stats_data_frame())
